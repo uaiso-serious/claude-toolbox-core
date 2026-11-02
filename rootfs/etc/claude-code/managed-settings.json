@@ -1,0 +1,14 @@
+{
+  "attribution": {
+    "commit": ""
+  },
+  "permissions": {
+    "deny": [
+      "Bash(git commit --no-verify *)",
+      "Bash(git commit -n *)",
+      "Bash(git * --no-verify *)",
+      "Bash(git -c core.hooksPath*)",
+      "Bash(git config * core.hooksPath*)"
+    ]
+  }
+}
