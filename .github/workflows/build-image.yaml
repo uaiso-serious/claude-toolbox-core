@@ -1,0 +1,67 @@
+name: Build & Push to GHCR
+
+on:
+  push:
+    branches:
+      - develop
+    tags:
+      - '*'
+    paths:
+      - '**.sh'
+      - '**.toml'
+      - '**.md'
+      - '**/Dockerfile'
+      - .github/workflows/build-image.yaml
+
+concurrency:
+  group: ghcr-build-develop
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+
+    permissions:
+      contents: read
+      packages: write
+
+    env:
+      IMAGE_TAG: ${{ (startsWith(github.ref, 'refs/heads/develop') && 'ghcr.io/uaiso-serious/claude-toolbox-core:latest') || (startsWith(github.ref, 'refs/tags/') && format('ghcr.io/uaiso-serious/claude-toolbox-core:{0}', github.ref_name)) || '' }}
+      IMAGE_SHA: ghcr.io/uaiso-serious/claude-toolbox-core:${{ github.sha }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Restore Docker cache
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.repository }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Build & Push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_TAG }}
+            ${{ env.IMAGE_SHA }}
+          build-args: |
+            NEXT_PUBLIC_SITE_URL=${{ vars.NEXT_PUBLIC_SITE_URL }}
+            NEXT_PUBLIC_TURNSTILE_SITE_KEY=${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache,mode=max

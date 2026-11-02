@@ -1,4 +1,4 @@
-FROM claude-runtime:latest
+FROM ghcr.io/uaiso-serious/claude-runtime:latest
 
 USER root
 RUN apt-get update \
