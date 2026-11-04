@@ -173,41 +173,96 @@ docker exec -it toolbox bash
 
 `GIT_SERVER_TYPE`, `GIT_REPO_URL`, `GIT_TOKEN`, `GIT_BASE_BRANCH`, `GIT_USER_NAME` e `GIT_USER_EMAIL` são obrigatórios. Exemplos reais (descartáveis) em `.env/demo-test-*.env`.
 
-```
-# --- Forja (scm-runtime) ---
-# onedev | gitlab | github
+> No `--env-file` do Docker, não use aspas nem `export` (o valor é lido literalmente) e mantenha comentários apenas em linhas próprias (no fim da linha viram parte do valor).
+
+```dotenv
+# ==============================================================================
+# Camada 1: Repositório Git e Issue (scm-runtime)
+# ==============================================================================
+
+# Tipo da forja: onedev, gitlab ou github (obrigatório)
 GIT_SERVER_TYPE=onedev
+
+# URL HTTP/HTTPS do repositório a ser clonado em /workspace (obrigatório)
 GIT_REPO_URL=http://onedev.example.com/org/repo.git
+
+# Token de acesso pessoal (PAT / Access Token) da forja (obrigatório; fica só em memória)
 GIT_TOKEN=<token da forja>
-# opcional; usuário no credential helper (padrão: git)
+
+# (Opcional) Usuário no credential helper HTTP (padrão: git)
 GIT_USERNAME=git
-# branch clonada
+
+# Branch base clonada inicialmente do remoto (obrigatório)
 GIT_BASE_BRANCH=main
-# branch de trabalho; criada se não existir no remoto
+
+# Branch de trabalho (obrigatória se ISSUE_ID não estiver definido; criada a partir de GIT_BASE_BRANCH se não existir)
 GIT_BRANCH=agent/minha-tarefa
+
+# Identidade Git configurada no container para os commits (obrigatório)
 GIT_USER_NAME=MyAgent
 GIT_USER_EMAIL=myagent@example.com
-# opcional; vira trailer Co-authored-by nos commits
+
+# (Opcional) Co-autor humano adicionado automaticamente via hook prepare-commit-msg (formato: "Nome <email>")
 GIT_CO_AUTHOR=Some human <somehuman@example.com>
 
-# --- Claude Code: autenticação (use um dos dois modos) ---
-# a) assinatura Claude
-CLAUDE_CODE_OAUTH_TOKEN=sk-ant-...
-# b) provedor compatível com a API Anthropic (ex.: Ollama)
-ANTHROPIC_BASE_URL=https://ollama.com
-ANTHROPIC_AUTH_TOKEN=<token do provedor>
-CLAUDE_CODE_MAX_CONTEXT_TOKENS=128000
-CLAUDE_CODE_ATTRIBUTION_HEADER=0
-# opcional; vira `claude --model`
-MODEL=gpt-oss:20b
+# (Opcional) ID da issue a ser baixada para /tmp/issue/*.md (sobrescreve GIT_BRANCH para issue/<ISSUE_ID>)
+#ISSUE_ID=123
 
-# --- Langfuse (opcional; sem as chaves nada é enviado) ---
+# (Opcional) Modo autônomo: se true, executa sem interação humana, captura stdout e comenta na issue (exige ISSUE_ID)
+#AUTONOMOUS_MODE=true
+
+# (Opcional) Limite máximo de caracteres do stdout enviado como comentário na issue no modo autônomo (padrão: 60000)
+#MAX_COMMENT_CHARS=60000
+
+# (Opcional) Overrides de host/token para GitLab ou GitHub Enterprise (derivados de GIT_REPO_URL e GIT_TOKEN se omitidos)
+#GITLAB_HOST=https://gitlab.example.com
+#GITLAB_TOKEN=seu_token_gitlab
+#GH_HOST=github.example.com
+#GH_TOKEN=seu_token_github
+#GH_ENTERPRISE_TOKEN=seu_token_ghe
+
+# ==============================================================================
+# Camada 2: Claude Code — Autenticação e Runtime (claude-runtime)
+# ==============================================================================
+
+# Autenticação (escolha uma das opções abaixo):
+# Opção A) Assinatura Claude (OAuth token)
+CLAUDE_CODE_OAUTH_TOKEN=sk-ant-...
+
+# Opção B) Provedor compatível com a API Anthropic (ex.: Ollama, LiteLLM, vLLM)
+#ANTHROPIC_BASE_URL=https://ollama.com
+#ANTHROPIC_AUTH_TOKEN=<token do provedor>
+#CLAUDE_CODE_MAX_CONTEXT_TOKENS=128000
+#CLAUDE_CODE_ATTRIBUTION_HEADER=0
+
+# (Opcional) Modelo passado para `claude --model`
+#MODEL=gpt-oss:20b
+
+# (Opcional) Prompt inicial enviado ao Claude Code (padrão autônomo com ISSUE_ID: "Resolva a issue #<ID>.")
+#ISSUE_PROMPT=Resolva a issue
+
+# (Opcional) Se true, inclui os comentários da issue (/tmp/issue/comments.md) no contexto do agente
+#ISSUE_COMMENTS=true
+
+# ==============================================================================
+# Camada 2: Telemetria Langfuse (plugin langfuse-observability)
+# ==============================================================================
+
+# (Opcional) URL base e chaves do projeto no Langfuse (se omitidas, nenhum trace é enviado)
 LANGFUSE_PUBLIC_KEY=pk-lf-...
 LANGFUSE_SECRET_KEY=sk-lf-...
 LANGFUSE_BASE_URL=http://langfuse.example.com
-```
 
-> No `--env-file` do Docker, comentários só valem em linhas próprias (no fim da linha viram parte do valor).
+# (Opcional) Identificador do usuário no trace (fallback automático: e-mail de GIT_CO_AUTHOR -> GIT_USER_EMAIL)
+#LANGFUSE_USER_ID=some-user
+
+# ==============================================================================
+# Camada 3: Docker CLI (claude-toolbox-core)
+# ==============================================================================
+
+# (Opcional) Endpoint do daemon Docker externo (a imagem traz apenas o docker-cli/buildx, sem daemon interno)
+#DOCKER_HOST=unix:///var/run/docker.sock
+```
 
 ### Variáveis
 
