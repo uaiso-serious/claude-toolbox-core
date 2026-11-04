@@ -1,30 +1,24 @@
-```plantuml
-@startuml
-skinparam componentStyle rectangle
-skinparam defaultTextAlignment center
+```mermaid
+flowchart TD
+    L1["<b>1. scm-runtime (Base SCM)</b><br/>Git + tod/glab/gh + Clone/Branch + /tmp/issue/*.md"]
 
-rectangle "1. scm-runtime (Base SCM)\nGit + tod/glab/gh + Clone/Branch + /tmp/issue/*.md" as L1
+    L2A["<b>2a. agy-runtime</b><br/>Antigravity + Telemetria Langfuse"]
+    L2B["<b>2b. claude-runtime</b><br/>Claude Code + Telemetria Langfuse"]
+    L2C["<b>2c. opencode-runtime</b><br/>OpenCode + Telemetria Langfuse"]
 
-rectangle "2a. agy-runtime\nAntigravity + Telemetria Langfuse" as L2A
-rectangle "2b. claude-runtime\nClaude Code + Telemetria Langfuse" as L2B
-rectangle "2c. opencode-runtime\nOpenCode + Telemetria Langfuse" as L2C
+    L3A["<b>3a. agy-toolbox-core</b><br/>CLI Arsenal + MCPs + Rules/Skills AGY"]
+    L3B["<b>3b. claude-toolbox-core</b><br/>CLI Arsenal + MCPs + CLAUDE.md/Hooks<br/>⬅ <b>você está aqui</b>"]
+    L3C["<b>3c. opencode-toolbox-core</b><br/>CLI Arsenal + MCPs específicos"]
 
-rectangle "3a. agy-toolbox-core\nCLI Arsenal + MCPs + Rules/Skills AGY" as L3A
-rectangle "3b. claude-toolbox-core\nCLI Arsenal + MCPs + CLAUDE.md/Hooks" as L3B #LightGreen;line:green;line.bold;text:black
-rectangle "3c. opencode-toolbox-core\nCLI Arsenal + MCPs específicos" as L3C
+    L1 --> L2A
+    L1 --> L2B
+    L1 --> L2C
 
-note right of L3B #LightGreen
-  **<&arrow-left> você está aqui**
-end note
+    L2A --> L3A
+    L2B --> L3B
+    L2C --> L3C
 
-L1 --> L2A
-L1 --> L2B
-L1 --> L2C
-
-L2A --> L3A
-L2B --> L3B
-L2C --> L3C
-@enduml
+    style L3B fill:#90EE90,stroke:#008000,stroke-width:3px,color:#000
 ```
 
 # claude-toolbox-core
